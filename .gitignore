@@ -1,6 +1,7 @@
 credentials.json
 token.json
 google_cookies.json
+playwright_session.json
 
 *.session
 *.log

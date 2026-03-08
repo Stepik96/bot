@@ -33,13 +33,13 @@ RESEND_AFTER_SECONDS = 60
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
+    format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler('auth.log'),
+        logging.FileHandler("auth.log", encoding="utf-8"),
         logging.StreamHandler(sys.stdout),
-    ]
+    ],
 )
-log = logging.getLogger('auth')
+log = logging.getLogger("auth")
 
 
 def _sent_code_type_hint(sent):

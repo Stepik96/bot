@@ -1,157 +1,298 @@
 """
-Gym Auto-Registration Bot — версия с OAuth2 авторизацией Google
+Gym Auto-Registration Bot — версия с эмуляцией браузера через Playwright.
+
+Бот:
+- следит за Telegram-каналом;
+- при появлении ссылки на Google Form открывает её в «виртуальном» браузере;
+- заполняет форму через JavaScript (находит видимые поля рядом со скрытыми entry.ID);
+- обрабатывает капчу / разлогин и уведомляет пользователя.
 """
 
 import asyncio
-import aiohttp
 import logging
-import re
-import json
 import os
+import re
 import sys
+from pathlib import Path
+from typing import Any, Dict
+
+from playwright.async_api import Page, async_playwright
 from telethon import TelegramClient, events
 from telethon.errors import FloodWaitError
 
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-
 from config import (
-    API_ID, API_HASH, CHANNEL_USERNAME,
-    FORM_FIELDS, NOTIFY_USER_ID
+    API_ID,
+    API_HASH,
+    CHANNEL_USERNAME,
+    FORM_FIELDS,
+    NOTIFY_USER_ID,
 )
 
 DEVICE_PARAMS = dict(
-    device_model='Desktop',
-    system_version='11',
-    app_version='4.16.30',
-    system_lang_code='en-US',
-    lang_code='en',
+    device_model="Desktop",
+    system_version="11",
+    app_version="4.16.30",
+    system_lang_code="en-US",
+    lang_code="en",
 )
 
-# Фикс кодировки Windows терминала (cp1251 не поддерживает эмодзи)
-if sys.platform == 'win32':
-    import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+PLAYWRIGHT_SESSION_FILE = "playwright_session.json"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('bot.log', encoding='utf-8'),
-        logging.StreamHandler(sys.stdout),
-    ]
+CHROME_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/122.0.0.0 Safari/537.36"
 )
-log = logging.getLogger(__name__)
-
-TOKEN_FILE = 'token.json'
-CREDENTIALS_FILE = 'credentials.json'
-
-SCOPES = [
-    'https://www.googleapis.com/auth/forms.responses.readonly',
-    'openid',
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile',
-]
 
 
-def get_valid_credentials() -> Credentials | None:
-    """Загружает и при необходимости обновляет OAuth2 токен."""
-    if not os.path.exists(TOKEN_FILE):
-        log.error(f"Файл {TOKEN_FILE} не найден! Запусти oauth2_setup.py")
-        return None
+def setup_logging() -> logging.Logger:
+    logger = logging.getLogger("gym_bot")
+    logger.setLevel(logging.INFO)
 
-    creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    if logger.handlers:
+        return logger
 
-    if not creds.valid:
-        if creds.expired and creds.refresh_token:
-            log.info("Обновляю OAuth2 токен...")
-            creds.refresh(Request())
-            # Сохраняем обновлённый токен
-            with open(TOKEN_FILE, 'w') as f:
-                f.write(creds.to_json())
-            log.info("Токен обновлён и сохранён")
-        else:
-            log.error("Токен истёк и нет refresh_token. Запусти oauth2_setup.py заново")
-            return None
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
-    return creds
+    file_handler = logging.FileHandler("bot.log", encoding="utf-8")
+    file_handler.setFormatter(formatter)
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
+    return logger
+
+
+log = setup_logging()
 
 
 def extract_form_url(text: str) -> str | None:
-    pattern = r'https://docs\.google\.com/forms/[^\s\)]+'
+    """Извлекает ссылку на Google Form из текста сообщения."""
+    pattern = r"https://docs\.google\.com/forms/[^\s\)]+"
     match = re.search(pattern, text)
     return match.group(0) if match else None
 
 
-def build_submit_url(form_url: str) -> str:
-    base = re.match(r'(https://docs\.google\.com/forms/d/e/[^/]+)', form_url)
-    if base:
-        return base.group(1) + '/formResponse'
-    base2 = re.match(r'(https://docs\.google\.com/forms/d/[^/]+)', form_url)
-    if base2:
-        return base2.group(1) + '/formResponse'
-    return form_url.split('?')[0].replace('viewform', 'formResponse')
+async def _ensure_stealth(page: Page) -> None:
+    """Stealth-режим: скрываем признаки автоматизации от Google."""
+    await page.context.add_init_script(
+        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+    )
 
 
-async def submit_google_form(form_url: str) -> bool:
-    submit_url = build_submit_url(form_url)
+async def submit_form_playwright(form_url: str) -> Dict[str, Any]:
+    """
+    Открывает форму через Playwright и заполняет её.
 
-    # Получаем валидный OAuth2 токен
-    creds = get_valid_credentials()
-    if not creds:
-        return False
-
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Referer': form_url,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Origin': 'https://docs.google.com',
-        # OAuth2 Bearer токен — это ключевое отличие от cookie-версии
-        'Authorization': f'Bearer {creds.token}',
+    Логика заполнения полей:
+    - Google Forms использует hidden input[name='entry.XXXXXXX'] для хранения значений.
+    - Видимые поля ввода НЕ имеют атрибута name — они рендерятся рядом в DOM.
+    - Мы находим скрытый input, поднимаемся по дереву до контейнера вопроса,
+      находим внутри него видимый input/textarea и заполняем через JS.
+    """
+    result: Dict[str, Any] = {
+        "success": False,
+        "captcha": False,
+        "login_required": False,
+        "screenshot": None,
     }
 
-    log.info(f"Отправляю на: {submit_url}")
-    log.info(f"Поля: {FORM_FIELDS}")
+    session_path = Path(PLAYWRIGHT_SESSION_FILE)
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                submit_url,
-                data=FORM_FIELDS,
-                headers=headers,
-                allow_redirects=True,
-                timeout=aiohttp.ClientTimeout(total=15)
-            ) as response:
-                final_url = str(response.url)
-                log.info(f"Статус: {response.status}, URL: {final_url}")
+    async with async_playwright() as p:
+        headless = session_path.exists()
 
-                # Проверяем что форма реально принята
-                # При успехе Google редиректит на .../formResponse (не на viewform)
-                if 'viewform' in final_url and 'pli=1' in final_url:
-                    log.error("Google вернул страницу формы снова — авторизация не прошла")
-                    return False
+        browser = await p.chromium.launch(
+            headless=headless,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
 
-                return response.status == 200
+        context = await browser.new_context(
+            viewport={"width": 1920, "height": 1080},
+            user_agent=CHROME_USER_AGENT,
+            storage_state=str(session_path) if session_path.exists() else None,
+        )
 
-    except Exception as e:
-        log.error(f"Ошибка при отправке: {e}")
-        return False
+        page = await context.new_page()
+        await _ensure_stealth(page)
+
+        try:
+            log.info("Открываю форму через Playwright: %s", form_url)
+            # domcontentloaded быстрее чем networkidle
+            await page.goto(form_url, wait_until="domcontentloaded")
+
+            # Ждём загрузки DOM формы
+            await asyncio.sleep(2.0)
+
+            # Если Google просит логин — сессия истекла
+            if "accounts.google.com" in page.url:
+                log.warning("Перенаправление на страницу логина Google. Нужна повторная авторизация.")
+                result["login_required"] = True
+                shot = "playwright_login_required.png"
+                await page.screenshot(path=shot, full_page=True)
+                result["screenshot"] = shot
+                return result
+
+            # Заполнение полей через Playwright locator().fill() по порядку появления на странице.
+            # Текстовые поля (entry.XXXXX) заполняем по индексу среди видимых input/textarea.
+            # emailAddress — это кастомный чекбокс Google Forms (div[role='checkbox']), не input.
+
+            # Собираем список текстовых полей (всё кроме emailAddress) в порядке из config
+            text_fields = [(name, value) for name, value in FORM_FIELDS.items() if name != 'emailAddress']
+
+            # Ждём пока хотя бы одно текстовое поле станет видимым
+            visible_input_selector = (
+                'input:not([type="hidden"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]), textarea'
+            )
+            try:
+                await page.wait_for_selector(visible_input_selector, timeout=10000)
+            except Exception:
+                log.warning("Видимые поля ввода не найдены за 10 сек.")
+
+            for field_index, (name, value) in enumerate(text_fields):
+                log.info("Заполняю поле '%s' (индекс %d)...", name, field_index)
+                try:
+                    locator = page.locator(visible_input_selector).nth(field_index)
+                    await locator.wait_for(state="visible", timeout=5000)
+                    await locator.click()
+                    await locator.fill(str(value))
+                    # Триггерим blur чтобы Google Forms зафиксировал значение
+                    await locator.evaluate("el => el.blur()")
+                    log.info("Результат заполнения поля '%s': ok", name)
+                except Exception as e:
+                    log.error("Не удалось заполнить поле '%s': %s", name, e)
+
+            # Специальная обработка emailAddress — Google Forms рендерит его как div[role='checkbox']
+            if 'emailAddress' in FORM_FIELDS:
+                log.info("Заполняю поле 'emailAddress'...")
+                checked = await page.evaluate("""
+                    () => {
+                        // Google Forms рендерит чекбокс email как div с role='checkbox'
+                        const selectors = [
+                            'div[role="checkbox"]',
+                            'div[jsname][role="checkbox"]',
+                            'div.isRequired div[role="checkbox"]',
+                        ];
+                        for (const sel of selectors) {
+                            const cb = document.querySelector(sel);
+                            if (cb) {
+                                const isChecked = cb.getAttribute('aria-checked') === 'true';
+                                if (!isChecked) {
+                                    cb.click();
+                                }
+                                return 'ok';
+                            }
+                        }
+                        // Запасной вариант: стандартный input[type=checkbox]
+                        const input = document.querySelector('input[type="checkbox"]');
+                        if (input) {
+                            if (!input.checked) {
+                                input.click();
+                                input.dispatchEvent(new Event('change', {bubbles: true}));
+                            }
+                            return 'ok_input';
+                        }
+                        return 'not_found';
+                    }
+                """)
+                log.info("Чекбокс emailAddress: %s", checked)
+
+            # Небольшая пауза после заполнения всех полей
+            await asyncio.sleep(0.5)
+
+            # Скриншот перед отправкой — для диагностики заполнения
+            await page.screenshot(path="playwright_before_submit.png", full_page=True)
+            log.info("Скриншот до отправки сохранён: playwright_before_submit.png")
+
+            # Поиск и нажатие кнопки Submit
+            log.info("Ищу кнопку отправки формы...")
+            submit_selectors = [
+                "div[role='button'][jsname='M2UYVd']",
+                "div[role='button'] span[jsname='V67aGc']",
+                "div[role='button']:has(span:text('Отправить'))",
+                "div[role='button']:has(span:text('Submit'))",
+                "div[role='button'][data-idom-class*='quantumWizButtonPaperbuttonLabel']",
+            ]
+
+            submit_button = None
+            for sel in submit_selectors:
+                try:
+                    submit_button = await page.wait_for_selector(sel, timeout=3000)
+                    if submit_button:
+                        log.info("Кнопка Submit найдена по селектору: %s", sel)
+                        break
+                except Exception:
+                    continue
+
+            if not submit_button:
+                log.error("Кнопка Submit не найдена ни одним из селекторов")
+                shot_path = "playwright_no_submit.png"
+                await page.screenshot(path=shot_path, full_page=True)
+                result["screenshot"] = shot_path
+                result["success"] = False
+                return result
+
+            await page.evaluate("el => el.click()", submit_button)
+            log.info("Кнопка отправки нажата (JS click), жду ответ...")
+
+            await page.wait_for_load_state("domcontentloaded")
+            await asyncio.sleep(2.0)
+
+            # Скриншот результата
+            shot_path = "playwright_result.png"
+            await page.screenshot(path=shot_path, full_page=True)
+            result["screenshot"] = shot_path
+
+            content = (await page.content()).lower()
+            url_after = page.url
+            log.info("URL после отправки: %s", url_after)
+
+            # Обнаружение капчи
+            if "капча" in content or "recaptcha" in content or "робот" in content:
+                log.warning("Похоже, Google показал капчу.")
+                result["captcha"] = True
+                result["success"] = False
+                return result
+
+            # Проверка успешной отправки по тексту страницы
+            success_markers = [
+                "ответ записан",
+                "форма отправлена",
+                "your response has been recorded",
+                "thanks",
+                "спасибо",
+            ]
+            if any(marker in content for marker in success_markers):
+                result["success"] = True
+                log.info("Форма успешно отправлена (по тексту страницы).")
+                return result
+
+            # Если вернули на страницу формы — скорее всего ошибка
+            if "viewform" in url_after and "pli=1" in url_after:
+                log.error("Google вернул страницу формы снова — отправка не прошла.")
+                result["success"] = False
+                return result
+
+            # Нет явных признаков ошибки — считаем успехом
+            log.info("Нет явных признаков ошибки, считаем отправку успешной.")
+            result["success"] = True
+            return result
+
+        finally:
+            await context.close()
+            await browser.close()
 
 
-async def main():
-    log.info("Запуск бота (OAuth2 версия)...")
-
-    # Проверяем токен при старте
-    creds = get_valid_credentials()
-    if not creds:
-        log.error("Нет валидного OAuth2 токена. Запусти oauth2_setup.py")
-        return
-
-    log.info("OAuth2 токен валиден")
+async def main() -> None:
+    log.info("Запуск бота (Playwright версия)...")
 
     client = TelegramClient(
-        'gym_session', API_ID, API_HASH,
+        "gym_session",
+        API_ID,
+        API_HASH,
         **DEVICE_PARAMS,
     )
 
@@ -169,47 +310,74 @@ async def main():
     try:
         await client.start()
     except FloodWaitError as e:
-        wait = getattr(e, 'seconds', None) or getattr(e, 'value', 60)
+        wait = getattr(e, "seconds", None) or getattr(e, "value", 60)
         log.error("FloodWait: подожди %s сек", wait)
         await client.disconnect()
         return
 
     log.info("Подключились к Telegram!")
 
-    processed_messages = set()
+    processed_messages: set[int] = set()
 
     @client.on(events.NewMessage(chats=CHANNEL_USERNAME))
-    async def handler(event):
+    async def handler(event) -> None:
         msg_id = event.message.id
         if msg_id in processed_messages:
             return
         processed_messages.add(msg_id)
 
-        msg_text = event.message.message or ''
-        log.info(f"Новое сообщение [{msg_id}]: {msg_text[:120]}")
+        msg_text = event.message.message or ""
+        log.info("Новое сообщение [%s]: %s", msg_id, msg_text[:120])
 
         form_url = extract_form_url(msg_text)
         if not form_url:
             log.info("Ссылки на форму нет — пропускаем")
             return
 
-        log.info(f"Форма найдена: {form_url}")
-        success = await submit_google_form(form_url)
+        log.info("Форма найдена: %s", form_url)
+        result = await submit_form_playwright(form_url)
+
+        success = bool(result.get("success"))
+        captcha = bool(result.get("captcha"))
+        login_required = bool(result.get("login_required"))
+        screenshot = result.get("screenshot")
+
+        if NOTIFY_USER_ID:
+            if login_required:
+                text = (
+                    "Нужна повторная авторизация в Google.\n"
+                    "Запусти playwright_setup.py, выполни вход и попробуй снова."
+                )
+            elif captcha:
+                text = (
+                    "Google показал капчу при отправке формы.\n"
+                    "Заполни форму вручную."
+                )
+            elif success:
+                text = f"Записался в спортзал!\nФорма: {form_url}"
+            else:
+                text = (
+                    "Не удалось автоматически отправить форму.\n"
+                    f"Заполни вручную:\n{form_url}"
+                )
+
+            if screenshot and os.path.exists(screenshot):
+                await client.send_file(NOTIFY_USER_ID, screenshot, caption=text)
+            else:
+                await client.send_message(NOTIFY_USER_ID, text)
 
         if success:
-            log.info("Форма заполнена!")
-            if NOTIFY_USER_ID:
-                await client.send_message(NOTIFY_USER_ID,
-                    f"Записался в спортзал!\nФорма: {form_url}")
+            log.info("Форма отправлена успешно.")
+        elif captcha:
+            log.warning("Отправка не удалась из-за капчи.")
+        elif login_required:
+            log.warning("Отправка не удалась из-за просроченной сессии Google.")
         else:
-            log.error("Не удалось заполнить форму")
-            if NOTIFY_USER_ID:
-                await client.send_message(NOTIFY_USER_ID,
-                    f"Ошибка! Заполни вручную:\n{form_url}")
+            log.error("Отправка завершилась с ошибкой.")
 
-    log.info(f"Мониторю канал: {CHANNEL_USERNAME}")
+    log.info("Мониторю канал: %s", CHANNEL_USERNAME)
     await client.run_until_disconnected()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())
