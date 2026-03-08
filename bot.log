@@ -7,3 +7,86 @@
 2026-03-08 13:16:15,434 - INFO - Запуск бота...
 2026-03-08 13:16:15,436 - INFO - Connecting to 149.154.167.51:443/TcpFull...
 2026-03-08 13:16:15,439 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 13:44:16,896 - INFO - Запуск бота...
+2026-03-08 13:44:16,898 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 13:44:16,902 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 13:44:18,087 - ERROR - Сессия не авторизована. Сначала выполни авторизацию:
+2026-03-08 13:44:18,088 - INFO -   python auth.py
+2026-03-08 13:44:18,088 - INFO - После ввода кода и создания gym_session.session запусти снова: python bot.py
+2026-03-08 13:44:18,089 - INFO - Disconnecting from 149.154.167.51:443/TcpFull...
+2026-03-08 13:44:18,089 - INFO - Disconnection from 149.154.167.51:443/TcpFull complete!
+2026-03-08 13:45:12,746 - INFO - Запуск бота...
+2026-03-08 13:45:12,749 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 13:45:12,752 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 13:45:13,916 - INFO - Подключились к Telegram!
+2026-03-08 13:47:17,932 - INFO - Новое сообщение [2]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 13:47:17,939 - INFO - Отправляю на: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 13:47:17,939 - INFO - Поля: {'entry.14248722': 'Рожин Степан Станиславович', 'entry.1479772708': '@Ami_So2', 'emailAddress': 'stepan.rozhin207@gmail.com'}
+2026-03-08 13:47:23,638 - INFO - Статус ответа: 200, URL: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?pli=1&pli=1
+2026-03-08 13:50:06,634 - INFO - Запуск бота...
+2026-03-08 13:50:06,638 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 13:50:06,641 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 13:50:08,967 - INFO - Подключились к Telegram!
+2026-03-08 13:50:37,077 - INFO - Новое сообщение [3]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 13:50:37,084 - INFO - Отправляю на: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 13:50:37,084 - INFO - Поля: {'entry.14248722': 'Рожин Степан Станиславович', 'entry.1479772708': '@Ami_So2', 'emailAddress': 'stepan.rozhin207@gmail.com'}
+2026-03-08 13:50:44,001 - INFO - Статус ответа: 200, URL: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?pli=1&pli=1
+2026-03-08 13:52:00,753 - INFO - Запуск бота...
+2026-03-08 13:52:00,755 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 13:52:00,759 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 13:52:02,807 - INFO - Подключились к Telegram!
+2026-03-08 13:52:42,905 - INFO - Новое сообщение [4]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 13:52:42,910 - INFO - Отправляю на: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 13:52:42,911 - INFO - Поля: {'entry.14248722': 'Иванов Сергей Петрович', 'entry.1479772708': '@Ami_So2', 'emailAddress': 'stepan.rozhin207@gmail.com'}
+2026-03-08 13:52:48,900 - INFO - Статус ответа: 200, URL: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?pli=1&pli=1
+2026-03-08 14:06:14,509 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2026-03-08 14:06:14,510 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2026-03-08 14:06:14,510 - INFO - Closing current connection to begin reconnect...
+2026-03-08 14:06:14,511 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 14:06:14,517 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 14:12:52,675 - WARNING - Server closed the connection: [WinError 1236] Подключение к сети было разорвано локальной системой
+2026-03-08 14:12:52,684 - INFO - Connection closed while sending data
+2026-03-08 14:12:52,734 - INFO - Connection closed while receiving data: [WinError 1236] Подключение к сети было разорвано локальной системой
+2026-03-08 14:12:52,748 - INFO - Closing current connection to begin reconnect...
+2026-03-08 14:12:52,753 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 14:12:52,760 - INFO - <class 'ConnectionAbortedError'> during disconnect: [WinError 1236] Подключение к сети было разорвано локальной системой
+2026-03-08 14:12:52,890 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 14:12:53,593 - INFO - Got difference for channel 2340525585 updates
+2026-03-08 14:44:10,545 - INFO - Got difference for channel 1319973745 updates
+2026-03-08 14:54:12,541 - INFO - Запуск бота...
+2026-03-08 14:54:12,544 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 14:54:12,549 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 14:54:13,781 - INFO - Подключились к Telegram!
+2026-03-08 14:54:38,330 - INFO - Got difference for channel 3200869408 updates
+2026-03-08 14:54:38,332 - INFO - Новое сообщение [4]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 14:54:38,339 - INFO - Отправляю на: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 14:54:38,339 - INFO - Поля: {'entry.14248722': 'Иванов Сергей Петрович', 'entry.1479772708': '@Ami_So2', 'emailAddress': 'stepan.rozhin207@gmail.com'}
+2026-03-08 14:54:38,345 - INFO - Новое сообщение [5]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 14:54:38,354 - INFO - Отправляю на: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 14:54:38,354 - INFO - Поля: {'entry.14248722': 'Иванов Сергей Петрович', 'entry.1479772708': '@Ami_So2', 'emailAddress': 'stepan.rozhin207@gmail.com'}
+2026-03-08 14:54:42,981 - INFO - Статус ответа: 200, URL: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?pli=1&pli=1
+2026-03-08 14:54:43,584 - INFO - Статус ответа: 200, URL: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?pli=1&pli=1
+2026-03-08 14:55:51,439 - INFO - Новое сообщение [6]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=dialog
+2026-03-08 14:55:51,452 - INFO - Отправляю на: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 14:55:51,453 - INFO - Поля: {'entry.14248722': 'Иванов Сергей Петрович', 'entry.1479772708': '@Ami_So2', 'emailAddress': 'stepan.rozhin207@gmail.com'}
+2026-03-08 14:55:56,383 - INFO - Статус ответа: 200, URL: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?pli=1&pli=1
+2026-03-08 15:07:41,210 - INFO - Запуск бота...
+2026-03-08 15:07:41,212 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 15:07:41,215 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 15:07:42,459 - INFO - Подключились к Telegram!
+2026-03-08 15:08:11,385 - INFO - Новое сообщение [7]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=dialog
+2026-03-08 15:08:11,391 - INFO - Отправляю на: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 15:08:11,391 - INFO - Поля: {'entry.14248722': 'Иванов Сергей Петрович', 'entry.1479772708': '@Ami_So2', 'emailAddress': 'stepan.rozhin207@gmail.com'}
+2026-03-08 15:08:15,703 - INFO - Статус ответа: 200, URL: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?pli=1&pli=1
+2026-03-08 15:55:34,791 - INFO - Р—Р°РїСѓСЃРє Р±РѕС‚Р° (OAuth2 РІРµСЂСЃРёСЏ)...
+2026-03-08 15:55:34,806 - INFO - OAuth2 С‚РѕРєРµРЅ РІР°Р»РёРґРµРЅ
+2026-03-08 15:55:34,809 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2026-03-08 15:55:34,815 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2026-03-08 15:55:35,974 - INFO - РџРѕРґРєР»СЋС‡РёР»РёСЃСЊ Рє Telegram!
+2026-03-08 15:55:35,974 - INFO - РњРѕРЅРёС‚РѕСЂСЋ РєР°РЅР°Р»: my_gym_test
+2026-03-08 15:55:59,484 - INFO - РќРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ [8]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 15:55:59,485 - INFO - Р¤РѕСЂРјР° РЅР°Р№РґРµРЅР°: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 15:55:59,486 - INFO - РћС‚РїСЂР°РІР»СЏСЋ РЅР°: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 15:55:59,486 - INFO - РџРѕР»СЏ: {'entry.14248722': 'РРІР°РЅРѕРІ РЎРµСЂРіРµР№ РџРµС‚СЂРѕРІРёС‡', 'entry.1479772708': '@Ami_So2', 'emailAddress': 'stepan.rozhin207@gmail.com'}
+2026-03-08 15:56:00,278 - INFO - РЎС‚Р°С‚СѓСЃ: 401, URL: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse
+2026-03-08 15:56:00,278 - ERROR - РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїРѕР»РЅРёС‚СЊ С„РѕСЂРјСѓ

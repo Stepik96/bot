@@ -1,0 +1,9 @@
+credentials.json
+token.json
+google_cookies.json
+
+*.session
+*.log
+
+__pycache__/
+*.pyc
