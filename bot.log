@@ -228,3 +228,57 @@ Call log:
 2026-03-08 20:38:16,188 - INFO - URL после отправки: https://docs.google.com/forms/u/0/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse?pli=1
 2026-03-08 20:38:16,189 - INFO - Форма успешно отправлена (по тексту страницы).
 2026-03-08 20:38:16,894 - INFO - Форма отправлена успешно.
+2026-03-08 20:54:56,194 - INFO - Запуск бота (Playwright версия)...
+2026-03-08 20:54:57,460 - INFO - Подключились к Telegram!
+2026-03-08 20:54:57,460 - INFO - Мониторю канал: my_gym_test
+2026-03-08 20:55:56,718 - INFO - Новое сообщение [16]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 20:55:56,719 - INFO - Форма найдена: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 20:55:58,082 - INFO - Открываю форму через Playwright: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 20:56:05,235 - INFO - Заполняю поле 'entry.14248722' (индекс 0)...
+2026-03-08 20:56:05,390 - INFO - Результат заполнения поля 'entry.14248722': ok
+2026-03-08 20:56:05,390 - INFO - Заполняю поле 'entry.1479772708' (индекс 1)...
+2026-03-08 20:56:05,538 - INFO - Результат заполнения поля 'entry.1479772708': ok
+2026-03-08 20:56:05,538 - INFO - Заполняю поле 'emailAddress'...
+2026-03-08 20:56:05,546 - INFO - Чекбокс emailAddress: ok
+2026-03-08 20:56:06,221 - INFO - Скриншот до отправки сохранён: playwright_before_submit.png
+2026-03-08 20:56:06,233 - INFO - Ищу кнопку отправки формы...
+2026-03-08 20:56:06,261 - INFO - Кнопка Submit найдена по селектору: div[role='button'][jsname='M2UYVd']
+2026-03-08 20:56:06,271 - INFO - Кнопка отправки нажата (JS click), жду ответ...
+2026-03-08 20:56:08,479 - INFO - URL после отправки: https://docs.google.com/forms/u/0/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse?pli=1
+2026-03-08 20:56:08,479 - INFO - Форма успешно отправлена (по тексту страницы).
+2026-03-08 20:56:09,162 - INFO - Форма отправлена успешно.
+2026-03-08 20:58:03,186 - INFO - Запуск бота (Playwright версия)...
+2026-03-08 20:58:04,781 - INFO - Подключились к Telegram!
+2026-03-08 20:58:04,781 - INFO - Мониторю канал: my_gym_test
+2026-03-08 21:00:35,998 - INFO - Новое сообщение [17]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 21:00:35,999 - INFO - Форма найдена: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 21:00:37,241 - INFO - Открываю форму через Playwright: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 21:00:43,269 - INFO - Заполняю поле 'entry.14248722' (индекс 0)...
+2026-03-08 21:00:43,396 - INFO - Результат заполнения поля 'entry.14248722': ok
+2026-03-08 21:00:43,397 - INFO - Заполняю поле 'entry.1479772708' (индекс 1)...
+2026-03-08 21:00:43,493 - INFO - Результат заполнения поля 'entry.1479772708': ok
+2026-03-08 21:00:43,493 - INFO - Заполняю поле 'emailAddress'...
+2026-03-08 21:00:43,498 - INFO - Чекбокс emailAddress: ok
+2026-03-08 21:00:44,130 - INFO - Скриншот до отправки сохранён: playwright_before_submit.png
+2026-03-08 21:00:44,131 - INFO - Ищу кнопку отправки формы...
+2026-03-08 21:00:44,138 - INFO - Кнопка Submit найдена по селектору: div[role='button'][jsname='M2UYVd']
+2026-03-08 21:00:44,146 - INFO - Кнопка отправки нажата (JS click), жду ответ...
+2026-03-08 21:00:46,332 - INFO - URL после отправки: https://docs.google.com/forms/u/0/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse?pli=1
+2026-03-08 21:00:46,333 - INFO - Форма успешно отправлена (по тексту страницы).
+2026-03-08 21:00:47,063 - INFO - Форма отправлена успешно.
+2026-03-08 21:01:30,246 - INFO - Новое сообщение [18]: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 21:01:30,247 - INFO - Форма найдена: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 21:01:31,573 - INFO - Открываю форму через Playwright: https://docs.google.com/forms/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/viewform?usp=publish-editor
+2026-03-08 21:01:37,299 - INFO - Заполняю поле 'entry.14248722' (индекс 0)...
+2026-03-08 21:01:37,442 - INFO - Результат заполнения поля 'entry.14248722': ok
+2026-03-08 21:01:37,442 - INFO - Заполняю поле 'entry.1479772708' (индекс 1)...
+2026-03-08 21:01:37,543 - INFO - Результат заполнения поля 'entry.1479772708': ok
+2026-03-08 21:01:37,543 - INFO - Заполняю поле 'emailAddress'...
+2026-03-08 21:01:37,551 - INFO - Чекбокс emailAddress: ok
+2026-03-08 21:01:38,216 - INFO - Скриншот до отправки сохранён: playwright_before_submit.png
+2026-03-08 21:01:38,216 - INFO - Ищу кнопку отправки формы...
+2026-03-08 21:01:38,225 - INFO - Кнопка Submit найдена по селектору: div[role='button'][jsname='M2UYVd']
+2026-03-08 21:01:38,231 - INFO - Кнопка отправки нажата (JS click), жду ответ...
+2026-03-08 21:01:40,424 - INFO - URL после отправки: https://docs.google.com/forms/u/0/d/e/1FAIpQLSela65n88TdQ_zyS-YAC1SOkJrzNUglHeUjUhE-KGBE6B9Y3g/formResponse?pli=1
+2026-03-08 21:01:40,425 - INFO - Форма успешно отправлена (по тексту страницы).
+2026-03-08 21:01:40,974 - INFO - Форма отправлена успешно.
