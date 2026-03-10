@@ -24,8 +24,10 @@ from config import (
     API_ID,
     API_HASH,
     CHANNEL_USERNAME,
-    FORM_FIELDS,
+    PERSONAL_DATA,
+    FORM_ENTRIES,
     NOTIFY_USER_ID,
+    PREFERRED_TIME,
 )
 
 DEVICE_PARAMS = dict(
@@ -70,10 +72,62 @@ log = setup_logging()
 
 
 def extract_form_url(text: str) -> str | None:
-    """Извлекает ссылку на Google Form из текста сообщения."""
-    pattern = r"https://docs\.google\.com/forms/[^\s\)]+"
-    match = re.search(pattern, text)
-    return match.group(0) if match else None
+    """
+    Извлекает нужную ссылку на Google Form из текста сообщения.
+
+    Формат сообщения канала:
+        18:00
+        https://docs.google.com/forms/...
+
+        19:15
+        https://docs.google.com/forms/...
+
+        20:30
+        https://docs.google.com/forms/...
+
+    Ссылка определяется по метке времени, написанной перед ней — не по порядку.
+    Ссылки на Spreadsheets и Tasks игнорируются.
+    Нужный слот задаётся в config.py через PREFERRED_TIME.
+    """
+    # Логируем ссылки которые игнорируем
+    for pattern, label in [
+        (r"https://docs\.google\.com/spreadsheets/[^\s]+", "Google Spreadsheets"),
+        (r"https://tasks\.google\.com/[^\s]+", "Google Tasks"),
+    ]:
+        for url in re.findall(pattern, text):
+            log.info("Найдена ссылка %s (информативная, пропускаем): %s", label, url[:60])
+
+    # Ищем пары "время + ссылка на форму" — время написано на строке перед ссылкой
+    # Паттерн: метка времени (HH:MM), затем любые символы до ссылки на форму
+    pattern = r"(1[89]:\d{2}|20:30|21:\d{2})\s*\n\s*(https://docs\.google\.com/forms/[^\s]+)"
+    matches = re.findall(pattern, text)
+
+    slot_to_url: dict[str, str] = {}
+    for time_label, url in matches:
+        # Нормализуем метку: берём только HH:MM начала слота
+        # Зал пишет "18:00", "19:15", "20:30" — берём как есть
+        slot_to_url[time_label] = url
+
+    if not slot_to_url:
+        log.warning("Не удалось найти пары время+ссылка в сообщении. Текст: %s", text[:200])
+        return None
+
+    log.info(
+        "Найдено %d слотов: %s",
+        len(slot_to_url),
+        {t: u[:55] + "..." for t, u in slot_to_url.items()},
+    )
+
+    if PREFERRED_TIME in slot_to_url:
+        log.info("Выбран слот %s (PREFERRED_TIME из config.py)", PREFERRED_TIME)
+        return slot_to_url[PREFERRED_TIME]
+
+    log.warning(
+        "Слот %s не найден среди доступных %s. Беру первый доступный.",
+        PREFERRED_TIME,
+        list(slot_to_url.keys()),
+    )
+    return next(iter(slot_to_url.values()))
 
 
 async def _ensure_stealth(page: Page) -> None:
@@ -83,15 +137,18 @@ async def _ensure_stealth(page: Page) -> None:
     )
 
 
-async def submit_form_playwright(form_url: str) -> Dict[str, Any]:
+async def submit_form_playwright(form_url: str, selected_time: str) -> Dict[str, Any]:
     """
     Открывает форму через Playwright и заполняет её.
 
-    Логика заполнения полей:
-    - Google Forms использует hidden input[name='entry.XXXXXXX'] для хранения значений.
-    - Видимые поля ввода НЕ имеют атрибута name — они рендерятся рядом в DOM.
-    - Мы находим скрытый input, поднимаемся по дереву до контейнера вопроса,
-      находим внутри него видимый input/textarea и заполняем через JS.
+    Порядок полей в форме (сверху вниз):
+      1. Электронная почта — чекбокс div[role='checkbox']
+      2. ФИО             — видимый input, индекс 0
+      3. Группа          — видимый input, индекс 1
+      4. Telegram        — видимый input, индекс 2
+
+    entry.ID для каждого времени берутся из FORM_ENTRIES[selected_time].
+    Личные данные берутся из PERSONAL_DATA — одно место для всех форм.
     """
     result: Dict[str, Any] = {
         "success": False,
@@ -99,6 +156,16 @@ async def submit_form_playwright(form_url: str) -> Dict[str, Any]:
         "login_required": False,
         "screenshot": None,
     }
+
+    # Собираем поля: entry.ID из FORM_ENTRIES + значения из PERSONAL_DATA
+    entries = FORM_ENTRIES.get(selected_time, {})
+    form_fields = {
+        entries['entry_fio']:      PERSONAL_DATA['name'],
+        entries['entry_group']:    PERSONAL_DATA['group'],
+        entries['entry_telegram']: PERSONAL_DATA['telegram'],
+        'emailAddress':            PERSONAL_DATA['email'],
+    }
+    log.info("Поля для слота %s: %s", selected_time, form_fields)
 
     session_path = Path(PLAYWRIGHT_SESSION_FILE)
 
@@ -140,8 +207,8 @@ async def submit_form_playwright(form_url: str) -> Dict[str, Any]:
             # Текстовые поля (entry.XXXXX) заполняем по индексу среди видимых input/textarea.
             # emailAddress — это кастомный чекбокс Google Forms (div[role='checkbox']), не input.
 
-            # Собираем список текстовых полей (всё кроме emailAddress) в порядке из config
-            text_fields = [(name, value) for name, value in FORM_FIELDS.items() if name != 'emailAddress']
+            # Текстовые поля: ФИО (0), Группа (1), Telegram (2)
+            text_fields = [(name, value) for name, value in form_fields.items() if name != 'emailAddress']
 
             # Ждём пока хотя бы одно текстовое поле станет видимым
             visible_input_selector = (
@@ -166,7 +233,7 @@ async def submit_form_playwright(form_url: str) -> Dict[str, Any]:
                     log.error("Не удалось заполнить поле '%s': %s", name, e)
 
             # Специальная обработка emailAddress — Google Forms рендерит его как div[role='checkbox']
-            if 'emailAddress' in FORM_FIELDS:
+            if 'emailAddress' in form_fields:
                 log.info("Заполняю поле 'emailAddress'...")
                 checked = await page.evaluate("""
                     () => {
@@ -286,6 +353,78 @@ async def submit_form_playwright(form_url: str) -> Dict[str, Any]:
             await browser.close()
 
 
+async def process_message(client, msg_id: int, msg_text: str, processed_messages: set, processed_urls: set) -> None:
+    """Обработка нового сообщения из канала."""
+    if msg_id in processed_messages:
+        log.debug("Сообщение [%s] уже обработано — пропускаем", msg_id)
+        return
+    processed_messages.add(msg_id)
+
+    log.info("Новое сообщение [%s]: %s", msg_id, msg_text[:120])
+
+    form_url = extract_form_url(msg_text)
+    if not form_url:
+        log.info("Ссылок на форму нет — пропускаем")
+        return
+
+    # Защита от дублирования: Telethon иногда доставляет одно сообщение дважды
+    if form_url in processed_urls:
+        log.warning("Форма %s уже отправлялась — пропускаем дубль", form_url)
+        return
+    processed_urls.add(form_url)
+
+    log.info("Форма найдена: %s", form_url)
+
+    # Определяем время слота по метке перед ссылкой
+    pattern = r"(1[89]:\d{2}|20:30|21:\d{2})\s*\n\s*(https://docs\.google\.com/forms/[^\s]+)"
+    matches = re.findall(pattern, msg_text)
+    selected_time = next(
+        (t for t, u in matches if u == form_url),
+        PREFERRED_TIME
+    )
+    log.info("Время слота: %s", selected_time)
+
+    result = await submit_form_playwright(form_url, selected_time)
+
+    success = bool(result.get("success"))
+    captcha = bool(result.get("captcha"))
+    login_required = bool(result.get("login_required"))
+    screenshot = result.get("screenshot")
+
+    if NOTIFY_USER_ID:
+        if login_required:
+            text = (
+                "⚠️ Нужна повторная авторизация в Google.\n"
+                "Запусти playwright_setup.py, выполни вход и попробуй снова."
+            )
+        elif captcha:
+            text = (
+                "⚠️ Google показал капчу при отправке формы.\n"
+                "Заполни форму вручную."
+            )
+        elif success:
+            text = f"✅ Записался в спортзал на {selected_time}!\nФорма: {form_url}"
+        else:
+            text = (
+                "❌ Не удалось автоматически отправить форму.\n"
+                f"Заполни вручную:\n{form_url}"
+            )
+
+        if screenshot and os.path.exists(screenshot):
+            await client.send_file(NOTIFY_USER_ID, screenshot, caption=text)
+        else:
+            await client.send_message(NOTIFY_USER_ID, text)
+
+    if success:
+        log.info("Форма отправлена успешно.")
+    elif captcha:
+        log.warning("Отправка не удалась из-за капчи.")
+    elif login_required:
+        log.warning("Отправка не удалась из-за просроченной сессии Google.")
+    else:
+        log.error("Отправка завершилась с ошибкой.")
+
+
 async def main() -> None:
     log.info("Запуск бота (Playwright версия)...")
 
@@ -318,64 +457,14 @@ async def main() -> None:
     log.info("Подключились к Telegram!")
 
     processed_messages: set[int] = set()
+    processed_urls: set[str] = set()  # защита от дублей: одна форма — одна отправка
 
     @client.on(events.NewMessage(chats=CHANNEL_USERNAME))
     async def handler(event) -> None:
-        msg_id = event.message.id
-        if msg_id in processed_messages:
-            return
-        processed_messages.add(msg_id)
-
         msg_text = event.message.message or ""
-        log.info("Новое сообщение [%s]: %s", msg_id, msg_text[:120])
+        await process_message(client, event.message.id, msg_text, processed_messages, processed_urls)
 
-        form_url = extract_form_url(msg_text)
-        if not form_url:
-            log.info("Ссылки на форму нет — пропускаем")
-            return
-
-        log.info("Форма найдена: %s", form_url)
-        result = await submit_form_playwright(form_url)
-
-        success = bool(result.get("success"))
-        captcha = bool(result.get("captcha"))
-        login_required = bool(result.get("login_required"))
-        screenshot = result.get("screenshot")
-
-        if NOTIFY_USER_ID:
-            if login_required:
-                text = (
-                    "Нужна повторная авторизация в Google.\n"
-                    "Запусти playwright_setup.py, выполни вход и попробуй снова."
-                )
-            elif captcha:
-                text = (
-                    "Google показал капчу при отправке формы.\n"
-                    "Заполни форму вручную."
-                )
-            elif success:
-                text = f"Записался в спортзал!\nФорма: {form_url}"
-            else:
-                text = (
-                    "Не удалось автоматически отправить форму.\n"
-                    f"Заполни вручную:\n{form_url}"
-                )
-
-            if screenshot and os.path.exists(screenshot):
-                await client.send_file(NOTIFY_USER_ID, screenshot, caption=text)
-            else:
-                await client.send_message(NOTIFY_USER_ID, text)
-
-        if success:
-            log.info("Форма отправлена успешно.")
-        elif captcha:
-            log.warning("Отправка не удалась из-за капчи.")
-        elif login_required:
-            log.warning("Отправка не удалась из-за просроченной сессии Google.")
-        else:
-            log.error("Отправка завершилась с ошибкой.")
-
-    log.info("Мониторю канал: %s", CHANNEL_USERNAME)
+    log.info("Жду новое сообщение с формами в канале: %s", CHANNEL_USERNAME)
     await client.run_until_disconnected()
 
 
