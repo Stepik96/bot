@@ -1,125 +1,52 @@
-# 🏋️ Gym Auto-Registration Bot v2 (Cookie Auth)
+# 🏋️ Gym Auto-Registration Bot
+
+Телеграм-бот, который автоматически записывает тебя в спортзал. Зал публикует ссылку на Google Form в Telegram-канале — бот перехватывает её и мгновенно заполняет форму от твоего имени.
 
 ---
 
-## 📁 Файлы
+## Как это работает
+
+1. Бот слушает Telegram-канал через **Telethon** (работает как обычный пользователь, не бот).
+2. Когда в канале появляется ссылка на Google Forms — бот её перехватывает.
+3. **Playwright** открывает форму в headless-браузере Chromium с сохранённой Google-сессией.
+4. Поля заполняются через `locator().fill()` по порядку появления на странице, чекбокс email кликается через `div[role='checkbox']`.
+5. Форма отправляется, бот присылает тебе уведомление в Telegram с результатом и скриншотом.
+
+> Форма требует авторизации Google ("Собирать подтверждённые email") — поэтому простой HTTP POST не работает. Playwright открывает настоящий браузер с твоей сохранённой Google-сессией.
+
+---
+
+## 📁 Структура файлов
 
 ```
 gym_bot/
-├── bot.py                # Основной скрипт
-├── config.py             # Настройки (заполнить!)
-├── get_cookies.py        # Извлечение cookies (запускать на компьютере)
-├── requirements.txt      # Зависимости
-└── gym_bot.service       # Автозапуск systemd
+├── bot.py                  # Основная логика: мониторинг Telegram + заполнение формы
+├── config.py               # Настройки (заполнить!)
+├── auth.py                 # Одноразовая авторизация Telethon
+├── playwright_setup.py     # Одноразовое создание Google-сессии браузера
+├── find_fields.py          # Вспомогательный скрипт: найти entry.ID полей формы
+├── validate_config.py      # Проверка конфига перед запуском
+├── requirements.txt        # Зависимости
+├── gym_bot.service         # Автозапуск через systemd (для Linux-сервера)
+├── gym_session.session     # Сессия Telethon (создаётся после auth.py)
+└── playwright_session.json # Сессия браузера Google (создаётся после playwright_setup.py)
 ```
-
----
-
-## 🚀 Пошаговая инструкция
-
-### Шаг 1 — Найди entry.ID полей формы (через DevTools)
-
-1. Открой форму в браузере (войди в Google аккаунт)
-2. Нажми **F12** → вкладка **Network**
-3. Заполни форму тестовыми данными → нажми **Отправить**
-4. В Network найди запрос **formResponse** → нажми на него → **Payload**
-5. Увидишь что-то вроде:
-   ```
-   entry.123456789: Иванов Иван Иванович
-   entry.987654321: @username
-   ```
-6. Скопируй эти ID в config.py
-
-### Шаг 2 — Заполни config.py
-
-```python
-CHANNEL_USERNAME = 'my_gym_test'   # тест, потом поменяй на NVKGYM
-FORM_FIELDS = {
-    'entry.123456789': 'Твоё ФИО полностью',
-    'entry.987654321': '@твой_telegram',
-}
-```
-
-### Шаг 3 — Получи Google cookies (на своём компьютере)
-
-**Автоматически:**
-```bash
-pip install browser-cookie3
-python get_cookies.py
-```
-
-**Вручную (если автоматически не сработало):**
-1. Открой форму в браузере, убедись что авторизован в Google
-2. F12 → Application → Cookies → https://accounts.google.com
-3. Найди cookie с именем **SSID**, **SID**, **HSID**, **APISID**, **SAPISID**, **__Secure-1PSID**
-4. Создай файл `google_cookies.json` вручную:
-```json
-[
-  {"name": "SID", "value": "значение"},
-  {"name": "HSID", "value": "значение"},
-  {"name": "SSID", "value": "значение"},
-  {"name": "APISID", "value": "значение"},
-  {"name": "SAPISID", "value": "значение"},
-  {"name": "__Secure-1PSID", "value": "значение"}
-]
-```
-
-**Скопируй на сервер:**
-```bash
-scp google_cookies.json user@server-ip:~/gym_bot/
-```
-
-### Шаг 4 — Установка на сервере
-
-```bash
-cd ~/gym_bot
-pip3 install -r requirements.txt
-python3 bot.py   # первый запуск — авторизация Telegram
-```
-
-### Шаг 5 — Автозапуск
-
-```bash
-sudo cp gym_bot.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable gym_bot
-sudo systemctl start gym_bot
-sudo systemctl status gym_bot
-```
-
----
-
-## 🔄 Обновление cookies (раз в 2-3 недели)
-
-```bash
-# На своём компьютере:
-python get_cookies.py
-scp google_cookies.json user@server-ip:~/gym_bot/
-
-# На сервере:
-sudo systemctl restart gym_bot
-```
-
----
-
-## 🧪 Тестирование
-
-1. Запусти бота: `python3 bot.py`
-2. Скинь ссылку на форму в тестовый канал @my_gym_test
-3. Бот должен среагировать и заполнить форму
-4. Проверь таблицу ответов формы — там должна появиться твоя запись
-5. Ты получишь уведомление в Telegram
 
 ---
 
 ## ❓ Частые проблемы
 
-**"Cookies не загружены"**
-→ Запусти get_cookies.py и скопируй файл на сервер
+**"Сессия не авторизована. Запусти auth.py"**
+→ Запусти `python auth.py` и пройди авторизацию заново.
 
-**Форма не заполняется (401/403)**
-→ Cookies протухли — обнови их через get_cookies.py
+**"Нужна повторная авторизация в Google"**
+→ Сессия браузера истекла. Запусти `python playwright_setup.py`.
 
-**Бот не видит сообщения**
-→ Убедись что подписан на канал
-→ Проверь CHANNEL_USERNAME в config.py (без @)
+**Форма не заполняется / поля пустые**
+→ entry.ID в config.py могут не совпадать с формой. Уточни их через `python find_fields.py <ссылка>` или DevTools.
+
+**FloodWait при запуске**
+→ Telegram просит подождать. Скрипт сообщит сколько секунд — подожди и попробуй снова.
+
+**Бот не видит новые сообщения**
+→ Убедись, что ты подписан на канал с того же аккаунта, который использует бот. Проверь `CHANNEL_USERNAME` в config.py (без `@`).
